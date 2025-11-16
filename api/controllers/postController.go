@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"go_crud/initializers"
-	"go_crud/models"
+	"go_crud/api/initializers"
+	"go_crud/api/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
