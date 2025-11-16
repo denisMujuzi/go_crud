@@ -1,8 +1,8 @@
 package main
 
 import (
-	"go_crud/initializers"
-	"go_crud/models"
+	"go_crud/api/initializers"
+	"go_crud/api/models"
 )
 
 func init() {
