@@ -4,15 +4,18 @@ import (
 	"go_crud/api/controllers"
 	"go_crud/api/initializers"
 	"go_crud/api/modules"
+	"go_crud/rabbitmq"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func init() {
 	initializers.LoadEnvVariables()
 	initializers.ConnectToDB()
 	initializers.Redis_connection()
+	initializers.RabbitMQ_connection()
 }
 
 func main() {
@@ -47,6 +50,47 @@ func main() {
 		c.JSON(200, gin.H{id: val})
 
 	})
+
+	// send message to rabbitmq
+	r.POST("/rabbitmq/:msg", func(ctx *gin.Context) {
+		msg := ctx.Param("msg")
+
+		ch := initializers.RabbitMQChannel
+
+		err := ch.PublishWithContext(ctx,
+			"",           // exchange
+			"task_queue", // routing key
+			false,        // mandatory
+			false,        // immediate
+			amqp.Publishing{
+				DeliveryMode: amqp.Persistent,
+				ContentType:  "text/plain",
+				Body:         []byte(msg),
+			})
+		initializers.FailOnError(err, "Failed to publish a message")
+		ctx.JSON(200, gin.H{"message": "Message sent to RabbitMQ"})
+	})
+
+	r.POST("/u-ex/:log", func(ctx *gin.Context) {
+		log := ctx.Param("log")
+
+		ch := initializers.RabbitMQChannel
+
+		err := ch.PublishWithContext(ctx,
+			"logs", // exchange
+			"",     // routing key
+			false,  // mandatory
+			false,  // immediate
+			amqp.Publishing{
+				DeliveryMode: amqp.Persistent,
+				ContentType:  "text/plain",
+				Body:         []byte(log),
+			})
+		initializers.FailOnError(err, "Failed to publish a message")
+		ctx.JSON(200, gin.H{"message": "Message sent to RabbitMQ Exchange"})
+	})
+
+	go rabbitmq.StartConsumers()
 
 	// Define a simple GET endpoint
 	v1.POST("/posts", controllers.Postscreate)
