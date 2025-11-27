@@ -15,7 +15,8 @@ func init() {
 	initializers.LoadEnvVariables()
 	initializers.ConnectToDB()
 	initializers.Redis_connection()
-	initializers.RabbitMQ_connection()
+	// initializers.RabbitMQ_connection()
+	initializers.InitializeFirebaseApp()
 }
 
 func main() {
@@ -88,6 +89,13 @@ func main() {
 			})
 		initializers.FailOnError(err, "Failed to publish a message")
 		ctx.JSON(200, gin.H{"message": "Message sent to RabbitMQ Exchange"})
+	})
+
+	r.GET("/firebase/:msg", func(ctx *gin.Context) {
+		msg := ctx.Param("msg")
+		initializers.SendMessage(msg)
+		ctx.JSON(200, gin.H{"message": "Message sent to Firebase"})
+
 	})
 
 	go rabbitmq.StartConsumers()
